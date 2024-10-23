@@ -18,9 +18,9 @@ class SolverExplicit(Solver):
         
         """Perform one step of numerical integration."""
         #----------------------------------------------------------------------------
-        #  | implementation here  |
-        # \ /                    \ /
-        #  v                      v
+        #  implementation here 
+        
+
         
         #----------------------------------------------------------------------------
         
