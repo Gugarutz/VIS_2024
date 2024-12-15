@@ -100,4 +100,25 @@ class MainWindow(QMainWindow):
 
         self.vtk_render_window.Render()  # Refresh the VTK window
 
- 
+    def fit_camera(self):
+        """Adjust the camera to fit the model in the render window."""
+        # Set up the camera to fit the bounding box of the model
+        camera = self.renderer.GetActiveCamera()
+
+        # Get the bounds of the model in world coordinates
+        bounds = self.renderer.ComputeVisiblePropBounds()
+
+        if bounds:
+            # Set the camera's position and focal point based on the model's bounds
+            camera.SetFocalPoint((bounds[0] + bounds[1]) / 2,
+                                 (bounds[2] + bounds[3]) / 2,
+                                 (bounds[4] + bounds[5]) / 2)
+
+            # Adjust the camera's view angle and position
+            offset = 50.0
+            camera.SetPosition(bounds[1] + offset, bounds[3] + offset, bounds[5] + offset)  # move camera to isometric view
+            camera.SetViewUp(0, 1, 0)  # Set the camera's "up" direction
+            camera.Zoom(1)  # Zoom out a bit to avoid being too zoomed in
+
+        # Update the view
+        self.vtk_render_window.Render()
