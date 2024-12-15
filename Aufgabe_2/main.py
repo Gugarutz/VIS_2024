@@ -1,7 +1,6 @@
 import mbsModel
 import sys
 from pathlib import Path
-from vtkmodules.vtkRenderingCore import vtkRenderer
 from PyQt6.QtWidgets import QApplication
 from main_window import MainWindow
 
@@ -13,7 +12,8 @@ myModel = mbsModel.mbsModel()
 
 # Read FDD file path from input arguments
 fdd_path = Path(sys.argv[1])
-myModel.importFddFile(fdd_path)
+if not myModel.importFddFile(fdd_path):
+    sys.exit("Failed to load FDD file!")
 
 # Create path for solver input file (fds)
 fds_path = fdd_path.with_suffix(".fds")
@@ -27,13 +27,11 @@ myModel.saveDatabase(json_path)
 newModel = mbsModel.mbsModel()
 newModel.loadDatabase(json_path)
 
-# Create a VTK renderer
-renderer = vtkRenderer()
-newModel.showModel(renderer)
-
-# Start the Qt application
+# Create a Qt application
 app = QApplication(sys.argv)
-main_window = MainWindow(renderer)
+
+# Create the main window and pass the model to it
+main_window = MainWindow(model=newModel)
 main_window.show()
 
 # Start the Qt event loop
