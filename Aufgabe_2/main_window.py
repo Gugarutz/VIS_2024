@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
         self.renderer = vtkRenderer()
 
         # Set up the main window properties
-        self.setWindowTitle("pyFreeDyn Viewer")
+        self.setWindowTitle("FreePyne Viewer")
         self.resize(1024, 768)
 
         # Set up the central widget
@@ -61,9 +61,19 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction("Exit", self.close_app)
 
+        # View menu
+        view_menu = menu_bar.addMenu("View")
+
+        # Add actions to the View menu
+        view_menu.addAction("ISO",   lambda: self.change_view("Iso"))
+        view_menu.addAction("Right", lambda: self.change_view("Right"))
+        view_menu.addAction("Top",   lambda: self.change_view("Top"))
+        view_menu.addAction("Front", lambda: self.change_view("Front"))
+
     def load_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Load File", "", "JSON Files (*.json)")
         if file_name:
+            self.model.clearModel()  # Clear the current model
             if self.model.loadDatabase(file_name):
                 QMessageBox.information(self, "Load File", f"Loaded file: {file_name}")
                 self.update_renderer()  # Update renderer with the new model
@@ -101,29 +111,48 @@ class MainWindow(QMainWindow):
         self.model.showModel(self.renderer)  # Render the updated model
 
         # Adjust the camera to fit the new model
-        self.fit_camera()
+        self.change_view("Iso")
 
         self.vtk_render_window.Render()  # Refresh the VTK window
 
-    def fit_camera(self):
-        """Adjust the camera to fit the model in the render window."""
-        # Set up the camera to fit the bounding box of the model
+    def change_view(self, view):
+        """Change the camera view based on the selected option."""
+        if not self.renderer:
+            return
+
+        # Adjust the camera to the selected view
         camera = self.renderer.GetActiveCamera()
 
         # Get the bounds of the model in world coordinates
         bounds = self.renderer.ComputeVisiblePropBounds()
 
         if bounds:
-            # Set the camera's position and focal point based on the model's bounds
-            camera.SetFocalPoint((bounds[0] + bounds[1]) / 2,
-                                 (bounds[2] + bounds[3]) / 2,
-                                 (bounds[4] + bounds[5]) / 2)
+            # Calculate the center of the bounding box
+            center = [(bounds[0] + bounds[1]) / 2,
+                      (bounds[2] + bounds[3]) / 2,
+                      (bounds[4] + bounds[5]) / 2]
 
-            # Adjust the camera's view angle and position
-            offset = 50.0
-            camera.SetPosition(bounds[1] + offset, bounds[3] + offset, bounds[5] + offset)  # move camera to isometric view
-            camera.SetViewUp(0, 1, 0)  # Set the camera's "up" direction
-            camera.Zoom(1)  # Zoom out a bit to avoid being too zoomed in
+            # Calculate the maximum dimension of the bounding box
+            max_dim = max(bounds[1] - bounds[0], bounds[3] - bounds[2], bounds[5] - bounds[4])
 
-        # Update the view
-        self.vtk_render_window.Render()
+            # Set the camera's position based on the selected view
+            margin = 1.2  # 20% margin
+            if view   == "Iso":
+                camera.SetPosition(center[0] + max_dim * margin, center[1] + max_dim * margin, center[2] + max_dim * margin)
+                camera.SetViewUp(0, 1, 0)
+            elif view == "Right":
+                camera.SetPosition(center[0], center[1], center[2] + max_dim * margin)
+                camera.SetViewUp(0, 1, 0)
+            elif view == "Front":
+                camera.SetPosition(center[0] + max_dim * margin, center[1], center[2])
+                camera.SetViewUp(0, 1, 0)
+            elif view == "Top":
+                camera.SetPosition(center[0], center[1] + max_dim * margin, center[2])
+                camera.SetViewUp(1, 0, 0)
+
+            camera.SetFocalPoint(center)
+            camera.SetClippingRange(0.1, max_dim * margin * 3)
+
+        # Reset the camera and apply the new view
+        self.renderer.ResetCamera()
+        self.vtk_widget.GetRenderWindow().Render()

@@ -1,4 +1,3 @@
-
 import inputfilereader
 import body
 import constraint
@@ -53,22 +52,28 @@ class mbsModel:
 
         return True
 
-    def saveDatabase(self,dataBasePath):
-        # Serializing json
-        modelObjects = []
-        for object in self.__mbsObjectList:
-            modelObject = {"type": object.getType(),
-                           "subtype": object.getSubType(),
-                           "parameter": object.parameter}
-            modelObjects.append(modelObject)
-        
-        jDataBase = json.dumps({"modelObjects": modelObjects})
+    def saveDatabase(self, dataBasePath):
+        try:
+            modelObjects = []
+            for object in self.__mbsObjectList:
+                modelObject = {"type": object.getType(),
+                               "subtype": object.getSubType(),
+                               "parameter": object.parameter}
+                modelObjects.append(modelObject)
+            
+            jDataBase = json.dumps({"modelObjects": modelObjects})
 
-        with open(dataBasePath, "w") as outfile:
-            outfile.write(jDataBase)
+            with open(dataBasePath, "w") as outfile:
+                outfile.write(jDataBase)
+            return True
+        except Exception as e:
+            print(f"Error saving database: {e}")
+            return False
+    
+    def clearModel(self):
+        self.__mbsObjectList = []
     
     def showModel(self, renderer):
         for object in self.__mbsObjectList:
             object.show(renderer)
 
-            
