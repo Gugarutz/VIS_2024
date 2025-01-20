@@ -62,16 +62,21 @@ class MainWindow(QMainWindow):
         file_menu.addAction("Exit", self.close_app)
 
     def load_file(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Load File", "", "All Files (*.*)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Load File", "", "JSON Files (*.json)")
         if file_name:
-            QMessageBox.information(self, "Load File", f"Loaded file: {file_name}")
-            # TODO: Add code to load your model data
+            if self.model.loadDatabase(file_name):
+                QMessageBox.information(self, "Load File", f"Loaded file: {file_name}")
+                self.update_renderer()  # Update renderer with the new model
+            else:
+                QMessageBox.critical(self, "Error", "Failed to load JSON file.")
 
     def save_file(self):
-        file_name, _ = QFileDialog.getSaveFileName(self, "Save File", "", "All Files (*.*)")
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save File", "", "JSON Files (*.json)")
         if file_name:
-            QMessageBox.information(self, "Save File", f"Saved file: {file_name}")
-            # TODO: Add code to save your model data
+            if self.model.saveDatabase(file_name):
+                QMessageBox.information(self, "Save File", f"Saved file: {file_name}")
+            else:
+                QMessageBox.critical(self, "Error", "Failed to save JSON file.")
 
     def import_fdd(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Import Fdd File", "", "FDD Files (*.fdd)")
