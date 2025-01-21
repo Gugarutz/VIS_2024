@@ -32,10 +32,14 @@ class mbsModel:
         f.close()
         
     def loadDatabase(self,database2Load):
+        # Open the JSON file and load its content into data
         f = open(database2Load)
         data = json.load(f)
         f.close()
+
+        # Iterate over each model object in the JSON data
         for modelObject in data["modelObjects"]:
+            # Check the type and subtype of the model object and create the corresponding mbsObject instance
             if(modelObject["type"] == "Body" and modelObject["subtype"] == "Rigid_EulerParameter_PAI"):
                 self.__mbsObjectList.append(body.rigidBody(parameter=modelObject["parameter"]))
             elif(modelObject["type"] == "Constraint" and modelObject["subtype"] == "Generic"):
