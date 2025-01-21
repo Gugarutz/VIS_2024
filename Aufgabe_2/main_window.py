@@ -1,10 +1,11 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QVBoxLayout, QWidget, QMenuBar, QFileDialog, QMessageBox
+    QMainWindow, QVBoxLayout, QWidget, QMenuBar, QFileDialog, QMessageBox, QDialog, QFormLayout, QLineEdit, QPushButton
 )
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from vtkmodules.all import vtkInteractorStyleTrackballCamera, vtkCamera
 from vtkmodules.vtkRenderingCore import vtkRenderer
 import mbsModel
+import body  # Ensure body module is imported
 
 
 class MainWindow(QMainWindow):
@@ -58,6 +59,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction("Load", self.load_file)
         file_menu.addAction("Save", self.save_file)
         file_menu.addAction("Import FDD", self.import_fdd)
+        file_menu.addAction("Import OBJ", self.import_obj)  # New menu item for importing OBJ
         file_menu.addSeparator()
         file_menu.addAction("Exit", self.close_app)
 
@@ -97,6 +99,58 @@ class MainWindow(QMainWindow):
                 self.update_renderer()  # Update renderer with the new model
             else:
                 QMessageBox.critical(self, "Error", "Failed to import FDD file.")
+
+    def import_obj(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Import OBJ File", "", "OBJ Files (*.obj)")
+        if file_name:
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Set Position, Rotation, and Color")
+
+            layout = QFormLayout(dialog)
+            position_input = QLineEdit(dialog)
+            rotation_input = QLineEdit(dialog)
+            color_input = QLineEdit(dialog)
+            layout.addRow("Position (x,y,z):", position_input)
+            layout.addRow("Rotation (x,y,z):", rotation_input)
+            layout.addRow("Color (r,g,b)(%):", color_input)
+
+            button_box = QWidget(dialog)
+            button_layout = QVBoxLayout(button_box)
+            ok_button = QPushButton("OK", dialog)
+            cancel_button = QPushButton("Cancel", dialog)
+            button_layout.addWidget(ok_button)
+            button_layout.addWidget(cancel_button)
+            layout.addRow(button_box)
+
+            def on_ok():
+                position = list(map(float, position_input.text().split(',')))
+                rotation = list(map(float, rotation_input.text().split(',')))
+                color = list(map(int, color_input.text().split(',')))
+                self.add_obj_to_model(file_name, position, rotation, color)
+                dialog.accept()
+
+            def on_cancel():
+                dialog.reject()
+
+            ok_button.clicked.connect(on_ok)
+            cancel_button.clicked.connect(on_cancel)
+
+            dialog.exec()
+
+    def add_obj_to_model(self, file_name, position, rotation, color):
+        parameter = {
+            "mass": {"type": "float", "value": 1.0},
+            "COG": {"type": "vector", "value": [0.0, 0.0, 0.0]},
+            "geometry": {"type": "filepath", "value": file_name},
+            "position": {"type": "vector", "value": position},
+            "x_axis": {"type": "vector", "value": [1.0, 0.0, 0.0]},
+            "y_axis": {"type": "vector", "value": [0.0, 1.0, 0.0]},
+            "z_axis": {"type": "vector", "value": [0.0, 0.0, 1.0]},
+            "color": {"type": "colorvector", "value": color + [0]}
+        }
+        new_body = body.rigidBody(parameter=parameter)
+        self.model._mbsModel__mbsObjectList.append(new_body)  # Use the correct attribute
+        self.update_renderer()
 
     def close_app(self):
         self.close()
