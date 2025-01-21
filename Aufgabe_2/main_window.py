@@ -6,6 +6,7 @@ from vtkmodules.all import vtkInteractorStyleTrackballCamera, vtkCamera
 from vtkmodules.vtkRenderingCore import vtkRenderer
 import mbsModel
 import body  # Ensure body module is imported
+import numpy as np
 
 
 class MainWindow(QMainWindow):
@@ -125,7 +126,7 @@ class MainWindow(QMainWindow):
             def on_ok():
                 position = list(map(float, position_input.text().split(',')))
                 rotation = list(map(float, rotation_input.text().split(',')))
-                color = list(map(int, color_input.text().split(',')))
+                color = [c / 100.0 for c in map(int, color_input.text().split(','))]
                 self.add_obj_to_model(file_name, position, rotation, color)
                 dialog.accept()
 
@@ -148,9 +149,38 @@ class MainWindow(QMainWindow):
             "z_axis": {"type": "vector", "value": [0.0, 0.0, 1.0]},
             "color": {"type": "colorvector", "value": color + [0]}
         }
+
+        # Apply rotation to the axes
+        import numpy as np
+        rotation_matrix = self.euler_to_rotation_matrix(rotation)
+        parameter["x_axis"]["value"] = rotation_matrix.dot([1.0, 0.0, 0.0]).tolist()
+        parameter["y_axis"]["value"] = rotation_matrix.dot([0.0, 1.0, 0.0]).tolist()
+        parameter["z_axis"]["value"] = rotation_matrix.dot([0.0, 0.0, 1.0]).tolist()
+
         new_body = body.rigidBody(parameter=parameter)
         self.model._mbsModel__mbsObjectList.append(new_body)  # Use the correct attribute
         self.update_renderer()
+
+    def euler_to_rotation_matrix(self, rotation):
+        """Convert Euler angles to a rotation matrix."""
+        rx, ry, rz = np.deg2rad(rotation)
+        cos_rx, sin_rx = np.cos(rx), np.sin(rx)
+        cos_ry, sin_ry = np.cos(ry), np.sin(ry)
+        cos_rz, sin_rz = np.cos(rz), np.sin(rz)
+
+        rotation_x = np.array([[1, 0, 0],
+                               [0, cos_rx, -sin_rx],
+                               [0, sin_rx, cos_rx]])
+
+        rotation_y = np.array([[cos_ry, 0, sin_ry],
+                               [0, 1, 0],
+                               [-sin_ry, 0, cos_ry]])
+
+        rotation_z = np.array([[cos_rz, -sin_rz, 0],
+                               [sin_rz, cos_rz, 0],
+                               [0, 0, 1]])
+
+        return rotation_z.dot(rotation_y).dot(rotation_x)
 
     def close_app(self):
         self.close()
