@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         view_menu = menu_bar.addMenu("View")
 
         # Add actions to the View menu
-        view_menu.addAction("ISO",   lambda: self.change_view("Iso"))
+        view_menu.addAction("ISO",   lambda: self.change_view("ISO"))
         view_menu.addAction("Right", lambda: self.change_view("Right"))
         view_menu.addAction("Top",   lambda: self.change_view("Top"))
         view_menu.addAction("Front", lambda: self.change_view("Front"))
@@ -151,7 +151,6 @@ class MainWindow(QMainWindow):
         }
 
         # Apply rotation to the axes
-        import numpy as np
         rotation_matrix = self.euler_to_rotation_matrix(rotation)
         parameter["x_axis"]["value"] = rotation_matrix.dot([1.0, 0.0, 0.0]).tolist()
         parameter["y_axis"]["value"] = rotation_matrix.dot([0.0, 1.0, 0.0]).tolist()
@@ -162,7 +161,7 @@ class MainWindow(QMainWindow):
         self.update_renderer()
 
     def euler_to_rotation_matrix(self, rotation):
-        """Convert Euler angles to a rotation matrix."""
+        # Convert Euler angles to a rotation matrix.
         rx, ry, rz = np.deg2rad(rotation)
         cos_rx, sin_rx = np.cos(rx), np.sin(rx)
         cos_ry, sin_ry = np.cos(ry), np.sin(ry)
@@ -190,7 +189,7 @@ class MainWindow(QMainWindow):
 ##      RENDER WINDOW ADJUSTMENT AND UPDATES TO RENDERER
 ##--------------------------------------------------------------------------------------------------------------------##
     def update_renderer(self):
-        """Clear the renderer and display the updated model."""
+        # Clear the renderer and display the updated model.
         self.renderer.RemoveAllViewProps()  # Clear the current visualization
         self.model.showModel(self.renderer)  # Render the updated model
 
@@ -200,7 +199,7 @@ class MainWindow(QMainWindow):
         self.vtk_render_window.Render()  # Refresh the VTK window
 
     def change_view(self, view):
-        """Change the camera view based on the selected option."""
+        # Change the camera view based on the selected option.
         if not self.renderer:
             return
 
@@ -221,7 +220,7 @@ class MainWindow(QMainWindow):
 
             # Set the camera's position based on the selected view
             margin = 1.2  # 20% margin
-            if view   == "Iso":
+            if view   == "ISO":
                 camera.SetPosition(center[0] + max_dim * margin, center[1] + max_dim * margin, center[2] + max_dim * margin)
                 camera.SetViewUp(0, 1, 0)
             elif view == "Right":
